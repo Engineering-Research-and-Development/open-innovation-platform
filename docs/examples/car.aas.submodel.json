@@ -1,0 +1,40 @@
+{
+    "modelType": {
+        "name": "Submodel"
+    },
+    "kind": "Instance",
+    "semanticId": {
+        "keys": [
+            {
+                "idType": "Iri",
+                "type": "GlobalReference",
+                "value": "Car001"
+            }
+        ]
+    },
+    "identification": {
+        "idType": "Iri",
+        "id": "https://example.com/car"
+    },
+    "idShort": "Car",
+    "submodelElements": [
+        {
+            "modelType": {
+                "name": "Property"
+            },
+            "kind": "Instance",
+            "semanticId": {
+                "keys": [
+                    {
+                        "idType": "Iri",
+                        "type": "GlobalReference",
+                        "value": "Car001"
+                    }
+                ]
+            },
+            "value": "20.0",
+            "valueType": "float",
+            "idShort": "Temperature"
+        }
+    ]
+}

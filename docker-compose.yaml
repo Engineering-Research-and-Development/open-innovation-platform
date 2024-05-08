@@ -1,0 +1,63 @@
+version: "3"
+services:
+  orion:
+    image: fiware/orion:3.10.1
+    #image: fiware/orion-ld:1.4.0
+    hostname: orion
+    depends_on:
+      - mongodb
+    networks:
+      - hostnet
+    ports:
+      - "1026:1026"
+    command: -dbhost mongodb -logLevel DEBUG
+    #command: -dbhost mongodb -logLevel DEBUG -forwarding -experimental
+
+  draco:
+    image: draco
+    hostname: draco
+    container_name: draco
+    networks:
+        - hostnet
+    ports:
+        # NIFI web UI (https)
+        - 8443:8443
+        # Algorithm ingestion (http)
+        - 8085:8085
+        # Data ingestion (http)
+        - 8086:8086
+    env_file:
+        - conf/draco/nifi.env
+    tty: true     
+    volumes:
+      - ./conf/draco/templates:/opt/nifi/nifi-current/templates
+
+  mongodb:
+    image: mongo:7.0.5
+    hostname: mongodb
+    networks:
+      - hostnet
+    ports:
+      - 27017:27017
+    command: --bind_ip_all
+    volumes:
+      - mongodb_volume:/data
+
+  postgres:
+    image: postgres
+    hostname: postgres
+    ports:
+    - 5432:5432
+    environment:
+      POSTGRES_USER: username # The PostgreSQL user (useful to connect to the database)
+      POSTGRES_PASSWORD: password # The PostgreSQL password (useful to connect to the database)
+      POSTGRES_DB: default_database # The PostgreSQL default database (automatically created at first launch)
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data/
+
+volumes:
+  mongodb_volume:
+  postgres_volume:
+
+networks:
+   hostnet:
