@@ -102,7 +102,7 @@ template_data=$(curl -s --location --request POST "https://draco:${NIFI_WEB_HTTP
 --header 'Accept: application/xml' \
 --header 'Content-Type: multipart/form-data' \
 --header "Authorization: Bearer ${token}" \
--F template=@"/opt/nifi/nifi-current/templates/template.xml" \
+-F template=@"/opt/nifi/nifi-current/templates/OpenInnovationPlatform.xml" \
 --insecure)
 
 echo "
