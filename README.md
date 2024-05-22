@@ -1,5 +1,7 @@
 <h1>Open Innovation Platform</h1>
 
+![Open Innovation Platform Schema](./docs/images/OIP-Schema.png "Open Innovation Platform Schema")
+
 <h2>Requirements</h2>
 <ul>
     <li>Docker Engine</li>
