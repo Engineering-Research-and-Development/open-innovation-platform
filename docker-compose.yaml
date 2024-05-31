@@ -14,7 +14,7 @@ services:
     #command: -dbhost mongodb -logLevel DEBUG -forwarding -experimental
 
   draco:
-    image: draco
+   #image: draco
     build: ./build/draco
     hostname: draco
     container_name: draco
