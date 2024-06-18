@@ -13,11 +13,12 @@ Draco is configured to listen at the port 8086 and base path /notify. All incomi
 into PostgreSQL depending on your needs.
 
 <h4>How to configure</h4>
-- Access Draco ui (https://localhost:8443/nifi)
-- Double click on OrionToPostgres-PoC process group
-- Double click on NGSIToPostgreSQL > Properties. Configure the processor depending on your needs
-- Start the three processors in the group
-- Perform a subscription to Orion. Here is an example:
+<ul>
+<li>Access Draco ui (https://localhost:8443/nifi)</li>
+<li>Double click on OrionToPostgres-PoC process group</li>
+<li>Double click on NGSIToPostgreSQL > Properties. Configure the processor depending on your needs</li>
+<li>Start the three processors in the group</li>
+<li>Perform a subscription to Orion. Here is an example:
 
 ```bash
 curl --location 'http://localhost:1026/v2/subscriptions' \
@@ -53,5 +54,6 @@ curl --location 'http://localhost:1026/v2/subscriptions' \
 }
 '
 ```
-
-- Update an attribute on Orion and check PostgreSQL database and table created
+</li>
+<li>Update an attribute on Orion and check PostgreSQL database and table created</li>
+</ul>
