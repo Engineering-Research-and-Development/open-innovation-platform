@@ -19,13 +19,13 @@ services:
     hostname: draco
     container_name: draco
     networks:
-        - hostnet
+      - hostnet
     ports:
         # NIFI web UI (https)
         - 8443:8443
-        # Algorithm ingestion (http)
+        # Listen AAS
         - 8085:8085
-        # Data ingestion (http)
+        # Listen Orion
         - 8086:8086
     env_file:
         - conf/draco/nifi.env
@@ -47,6 +47,8 @@ services:
   postgres:
     image: postgres
     hostname: postgres
+    networks:
+      - hostnet
     ports:
     - 5432:5432
     environment:
@@ -77,6 +79,8 @@ services:
   minio1:
     <<: *minio-common
     hostname: minio1
+    networks:
+      - hostnet
     volumes:
       - data1-1:/data1
       - data1-2:/data2
@@ -84,6 +88,8 @@ services:
   minio2:
     <<: *minio-common
     hostname: minio2
+    networks:
+      - hostnet
     volumes:
       - data2-1:/data1
       - data2-2:/data2
@@ -91,6 +97,8 @@ services:
   minio3:
     <<: *minio-common
     hostname: minio3
+    networks:
+      - hostnet
     volumes:
       - data3-1:/data1
       - data3-2:/data2
@@ -98,6 +106,8 @@ services:
   minio4:
     <<: *minio-common
     hostname: minio4
+    networks:
+      - hostnet
     volumes:
       - data4-1:/data1
       - data4-2:/data2
@@ -105,6 +115,8 @@ services:
   nginx:
     image: nginx:1.19.2-alpine
     hostname: nginx
+    networks:
+      - hostnet
     volumes:
       - ./conf/minio/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
@@ -119,6 +131,8 @@ services:
   mosquitto:
     image: eclipse-mosquitto:2.0
     hostname: mosquitto
+    networks:
+      - hostnet
     container_name: mosquitto
     restart: unless-stopped
     ports:
