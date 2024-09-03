@@ -1,5 +1,14 @@
 <h1>Open Innovation Platform</h1>
 
+<img src="./docs/images/Pioneer-Logo_Regular.png" alt="Pioneer Project logo" width="200px">
+
+https://www.pioneer-project.eu/
+
+<br>
+
+Open Innovation Platform for optimising production systems by combining product development, virtual engineering workflows and production data.
+
+
 ![Open Innovation Platform Schema](./docs/images/OIP-Schema.png "Open Innovation Platform Schema")
 
 <h2>Requirements</h2>
