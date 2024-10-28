@@ -125,7 +125,7 @@ services:
     networks:
       - hostnet
     volumes:
-      - ./conf/minio/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./conf/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "9000:9000"
       - "9001:9001"
