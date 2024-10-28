@@ -69,9 +69,9 @@ services:
   x-minio-common: &minio-common
     image: quay.io/minio/minio:RELEASE.2024-05-10T01-41-38Z
     command: server --console-address ":9001" http://minio{1...4}/data{1...2}
-    expose:
-      - "9000"
-      - "9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     env_file:
       - ./conf/minio/minio.env
     healthcheck:
