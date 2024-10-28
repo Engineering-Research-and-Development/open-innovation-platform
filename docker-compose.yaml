@@ -1,4 +1,11 @@
-version: "3"
+version: "3.4"
+
+x-common-variables: &common-variables
+  KEYCLOAK_URL:
+  KEYCLOAK_REALM:
+  KEYCLOAK_CLIENT_ID:
+  KEYCLOAK_REDIRECT_URI:
+
 services:
   orion:
     image: fiware/orion:3.10.1
@@ -250,7 +257,7 @@ services:
       - IOTA_DEFAULT_RESOURCE=/iot/json
 
   iotagent-aas:
-    image: iotagent4fiware/iotagent-aas:latest
+    image: iotagent4fiware/iotagent-aas:1.0.0
     hostname: iotagent-aas
     depends_on:
       - mongodb
@@ -314,6 +321,38 @@ services:
       - "IOTA_AAS_MT_STORE_OUTPUT=true"
     volumes:
       - ./conf/iotagent-aas:/opt/iotagent-aas/conf
+
+  iotagent-ui-spa:
+    image: iotagent4fiware/iotagent-ui-spa:1.0.0
+    hostname: iotagent-ui-spa
+    depends_on:
+      - iotagent-ui-bff
+    networks:
+      - hostnet
+    ports:
+      - "8087:80"
+    environment:
+      <<: *common-variables
+      BFF_API_BASE_URL: 'http://localhost:9005'
+
+  iotagent-ui-bff:
+    image: iotagent4fiware/iotagent-ui-bff:1.0.0
+    hostname: iotagent-ui-bff
+    depends_on:
+      - mongodb
+    networks:
+      - hostnet
+    ports:
+      - "9005:9000"
+    environment:
+      <<: *common-variables
+      NODE_ENV: 'true'
+      PORT: '9005'
+      MONGO_HOST: 'mongodb'
+      MONGO_PORT: '27017'
+      MONGO_DB: 'iotagent_ui'
+      AUTH_SECRET: 'secret'
+      ADMIN_ACCOUNT: 'true'
 
 ## By default, this config uses default local driver,
 ## For custom volumes replace with volume driver configuration.
