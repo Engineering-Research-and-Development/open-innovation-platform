@@ -1,0 +1,278 @@
+# a very minimal declarative config file
+_format_version: "2.1"
+_transform: true
+
+services:
+  - name: minio
+    retries: 5
+    protocol: http
+    port: 9001
+    write_timeout: 60000
+    connect_timeout: 60000
+    read_timeout: 60000
+    host: nginx
+    id: 18489704-eb1b-47c2-9ec1-842948b976ac
+    enabled: true
+  - name: iotagent-opcua
+    retries: 5
+    path: 
+    protocol: http
+    port: 4041
+    write_timeout: 60000
+    connect_timeout: 60000
+    read_timeout: 60000
+    host: iotagent-opcua
+    id: 2c021a49-2254-4d1a-8e3d-c0b0e633cc97
+    enabled: true
+  - name: iotagent-json
+    retries: 5
+    protocol: http
+    port: 4041
+    write_timeout: 60000
+    connect_timeout: 60000
+    read_timeout: 60000
+    host: iotagent-json
+    id: 4811186e-95fa-4958-82cf-cf8d748c5472
+    enabled: true
+  - name: iotagent-aas
+    retries: 5
+    protocol: http
+    port: 4041
+    write_timeout: 60000
+    connect_timeout: 60000
+    read_timeout: 60000
+    host: iotagent-aas
+    id: ef9a9d5a-76d2-4ba4-bdd3-74e2538cd56a
+    enabled: true
+  - name: orion
+    retries: 5
+    path: 
+    protocol: http
+    port: 1026
+    write_timeout: 60000
+    connect_timeout: 60000
+    read_timeout: 60000
+    host: orion
+    id: 6826e807-82fd-4463-aaa3-447a7bd90db2
+    enabled: true
+  - name: keycloak
+    retries: 5
+    path: 
+    protocol: http
+    port: 8080
+    write_timeout: 60000
+    connect_timeout: 60000
+    read_timeout: 60000
+    host: keycloak
+    id: 96e04120-3eec-4d95-84b0-ff04e7b820c3
+    enabled: true
+  - name: draco
+    retries: 5
+    protocol: https
+    port: 8443
+    write_timeout: 60000
+    connect_timeout: 60000
+    read_timeout: 60000
+    host: draco
+    id: b0ac97e2-9021-4bea-ac37-57634c7dba67
+    enabled: true
+  - name: iotagent-ui
+    retries: 5
+    protocol: http
+    port: 9000
+    write_timeout: 60000
+    connect_timeout: 60000
+    read_timeout: 60000
+    host: iotagent-ui-bff
+    id: c010a2ab-bfad-44e6-a803-80fe62514860
+    enabled: true
+  - name: aas-server
+    retries: 5
+    protocol: http
+    port: 8082
+    write_timeout: 60000
+    connect_timeout: 60000
+    read_timeout: 60000
+    host: 150.140.148.141
+    id: d5097142-2bf4-43c0-84cb-c141f53d7985
+    enabled: true
+
+routes:
+  - name: aas-server-route
+    strip_path: true
+    protocols:
+      - http
+      - https
+    regex_priority: 0
+    service:
+      id: d5097142-2bf4-43c0-84cb-c141f53d7985
+    id: 16f75abb-1a13-4215-9658-89048b374cc6
+    preserve_host: false
+    paths:
+      - /aas-server
+    https_redirect_status_code: 426
+    path_handling: v0
+    request_buffering: true
+    response_buffering: true
+  - name: orion
+    strip_path: true
+    protocols:
+      - http
+      - https
+    regex_priority: 0
+    service:
+      id: 6826e807-82fd-4463-aaa3-447a7bd90db2
+    id: 30d25b38-1ff0-4165-9640-8b984868d981
+    preserve_host: false
+    paths:
+      - /orion
+    https_redirect_status_code: 426
+    path_handling: v0
+    request_buffering: true
+    response_buffering: true
+  - name: minio-api
+    strip_path: true
+    protocols:
+      - http
+      - https
+    regex_priority: 0
+    service:
+      id: 18489704-eb1b-47c2-9ec1-842948b976ac
+    id: 48c7e32d-e066-428d-b2f0-415a05d29ee8
+    preserve_host: false
+    paths:
+      - /minio-api
+    https_redirect_status_code: 426
+    path_handling: v0
+    request_buffering: true
+    response_buffering: true
+  - name: nifi-api
+    strip_path: false
+    protocols:
+      - http
+      - https
+    regex_priority: 0
+    service:
+      id: b0ac97e2-9021-4bea-ac37-57634c7dba67
+    id: 69240e54-bac5-4a23-ab77-7a99aaaf5cd8
+    preserve_host: true
+    paths:
+      - /nifi-api
+    https_redirect_status_code: 426
+    path_handling: v0
+    request_buffering: true
+    response_buffering: true
+  - name: iotagent-aas
+    strip_path: true
+    protocols:
+      - http
+      - https
+    regex_priority: 0
+    service:
+      id: ef9a9d5a-76d2-4ba4-bdd3-74e2538cd56a
+    id: 487b02c4-8e21-4b21-9775-b75a42e12d04
+    preserve_host: false
+    paths:
+      - /agent/aas
+    https_redirect_status_code: 426
+    path_handling: v0
+    request_buffering: true
+    response_buffering: true
+  - name: iotagent-opcua
+    strip_path: true
+    protocols:
+      - http
+      - https
+    regex_priority: 0
+    service:
+      id: 2c021a49-2254-4d1a-8e3d-c0b0e633cc97
+    id: 78e71891-d9ba-4863-b6c3-f489be8705f2
+    preserve_host: false
+    paths:
+      - /iotagent/opcua
+    https_redirect_status_code: 426
+    path_handling: v0
+    request_buffering: true
+    response_buffering: true
+  - name: iotagent-json
+    strip_path: true
+    protocols:
+      - http
+      - https
+    regex_priority: 0
+    service:
+      id: 4811186e-95fa-4958-82cf-cf8d748c5472
+    id: c3d60763-0482-462f-8e95-a921f294c336
+    preserve_host: false
+    paths:
+      - /agent/json
+    https_redirect_status_code: 426
+    path_handling: v0
+    request_buffering: true
+    response_buffering: true
+  - name: iotagent-ui-bff
+    strip_path: true
+    protocols:
+      - http
+      - https
+    regex_priority: 0
+    service:
+      id: c010a2ab-bfad-44e6-a803-80fe62514860
+    id: 4d6c4ead-3801-4035-88e6-12ec31c80834
+    preserve_host: false
+    paths:
+      - /agent/ui
+    https_redirect_status_code: 426
+    path_handling: v0
+    request_buffering: true
+    response_buffering: true
+  - name: auth
+    strip_path: false
+    protocols:
+      - http
+      - https
+    regex_priority: 0
+    service:
+      id: 96e04120-3eec-4d95-84b0-ff04e7b820c3
+    id: efae79c8-7b30-4a5c-af0d-99df56023ba1
+    preserve_host: true
+    paths:
+      - /auth
+    https_redirect_status_code: 426
+    path_handling: v0
+    request_buffering: true
+    response_buffering: true
+
+plugins:
+  - name: request-transformer
+    id: 2bb216f4-c98d-46f0-9d8e-23b9e842373d
+    config:
+      http_method: null
+      rename:
+        body: []
+        headers: []
+        querystring: []
+      add:
+        body: []
+        headers:
+          - 'Authorization: Bearer token'
+        querystring: []
+      append:
+        body: []
+        headers: []
+        querystring: []
+      replace:
+        body: []
+        headers: []
+        uri: null
+        querystring: []
+      remove:
+        body: []
+        headers: []
+        querystring: []
+    route:
+      id: 16f75abb-1a13-4215-9658-89048b374cc6
+    enabled: true
+    protocols:
+      - http
+      - https

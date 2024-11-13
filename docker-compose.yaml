@@ -1,4 +1,4 @@
-version: "3.4"
+version: "3.9"
 
 x-common-variables: &common-variables
   KEYCLOAK_URL:
@@ -6,9 +6,36 @@ x-common-variables: &common-variables
   KEYCLOAK_CLIENT_ID:
   KEYCLOAK_REDIRECT_URI:
 
+x-kong-config:
+  &kong-env
+  KONG_DATABASE: ${KONG_DATABASE:-off}
+  KONG_PG_DATABASE: ${KONG_PG_DATABASE:-kong}
+  KONG_PG_HOST: kong-db
+  KONG_PG_USER: ${KONG_PG_USER:-kong}
+  KONG_PG_PASSWORD_FILE: /run/secrets/kong_postgres_password
+
+# Settings and configurations that are common for all containers
+x-minio-common: &minio-common
+  image: quay.io/minio/minio:RELEASE.2023-09-23T03-47-50Z
+  command: server --console-address ":9001" http://minio{1...4}/data{1...2}
+  expose:
+    - "9000"
+    - "9001"
+  env_file:
+    - ./conf/minio/minio.env
+  healthcheck:
+    test: ["CMD", "mc", "ready", "local"]
+    interval: 5s
+    timeout: 5s
+    retries: 5
+  networks:
+      - hostnet
+
 services:
   orion:
     image: fiware/orion:3.10.1
+    container_name: orion
+    profiles: [ "middleware", "orion" ]
    # image: fiware/orion-ld:1.4.0
     hostname: orion
     depends_on:
@@ -23,6 +50,7 @@ services:
   draco:
     image: draco
     build: ./build/draco
+    profiles: [ "middleware", "draco" ]
     hostname: draco
     container_name: draco
     networks:
@@ -42,6 +70,8 @@ services:
 
   mongodb:
     image: mongo:7.0.5
+    container_name: mongodb
+    profiles: [ "middleware", "iotagent-ui" ]
     hostname: mongodb
     networks:
       - hostnet
@@ -50,9 +80,57 @@ services:
     command: --bind_ip_all
     volumes:
       - mongodb_volume:/data
+  
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    profiles: [ "middleware", "minio" ]
+    hostname: mosquitto
+    networks:
+      - hostnet
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./conf/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  grafana:
+    image: grafana/grafana:10.2.3
+    profiles: [ "middleware", "grafana" ]
+    hostname: grafana
+    container_name: grafana
+    restart: always
+    networks:
+      - hostnet
+    volumes:
+      - grafanavolume:/var/lib/grafana
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SERVER_ROOT_URL=http://localhost/grafana
+
+  pgadmin:
+    image: dpage/pgadmin4:8.4
+    profiles: [ "middleware" ]
+    hostname: pgadmin
+    container_name: pgadmin4
+    restart: always
+    networks:
+      - hostnet
+    depends_on:
+      - postgres
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "test@test.it"
+      PGADMIN_DEFAULT_PASSWORD: "password"
+    volumes:
+      - pgadminvolume:/var/lib/pgadmin
 
   postgres:
     image: postgres
+    profiles: ["middleware"]
+    container_name: middleware-postgres
     hostname: postgres
     networks:
       - hostnet
@@ -65,114 +143,112 @@ services:
     volumes:
       - postgres_volume:/var/lib/postgresql/data/
 
-  # Settings and configurations that are common for all containers
-  x-minio-common: &minio-common
-    image: quay.io/minio/minio:RELEASE.2024-05-10T01-41-38Z
-    command: server --console-address ":9001" http://minio{1...4}/data{1...2}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    env_file:
-      - ./conf/minio/minio.env
-    healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   # starts 4 docker containers running minio server instances.
   # using nginx reverse proxy, load balancing, you can access
   # it through port 9000.
   minio1:
     <<: *minio-common
+    profiles: [ "minio" ]
     hostname: minio1
-    networks:
-      - hostnet
+    container_name: minio1
     volumes:
       - data1-1:/data1
       - data1-2:/data2
 
   minio2:
     <<: *minio-common
+    profiles: [ "minio" ]
     hostname: minio2
-    networks:
-      - hostnet
+    container_name: minio2
     volumes:
       - data2-1:/data1
       - data2-2:/data2
 
   minio3:
     <<: *minio-common
+    profiles: [ "minio" ]
     hostname: minio3
-    networks:
-      - hostnet
+    container_name: minio3
     volumes:
       - data3-1:/data1
       - data3-2:/data2
 
   minio4:
     <<: *minio-common
+    profiles: [ "minio" ]
     hostname: minio4
-    networks:
-      - hostnet
+    container_name: minio4
     volumes:
       - data4-1:/data1
       - data4-2:/data2
 
-  nginx:
+  reverse-proxy:
     image: nginx:1.19.2-alpine
+    profiles: [ "reverse-proxy" ]
+    container_name: reverse-proxy
     hostname: nginx
     networks:
       - hostnet
     volumes:
       - ./conf/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certificates/pioneer.crt:/etc/nginx/cert.crt
+      - ./certificates/pioneer.key:/etc/nginx/cert.key
     ports:
       - "9000:9000"
       - "9001:9001"
-    depends_on:
-      - minio1
-      - minio2
-      - minio3
-      - minio4
-
-  mosquitto:
-    image: eclipse-mosquitto:2.0
-    hostname: mosquitto
-    networks:
-      - hostnet
-    container_name: mosquitto
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-    volumes:
-      - ./conf/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - "80:80"
+      - "443:443"
   
   keycloak:
     image: quay.io/keycloak/keycloak:14.0.0
+    container_name: keycloak
+    hostname: keycloak
+    profiles: [ "keycloak" ]
     environment:
       DB_VENDOR: POSTGRES
-      DB_ADDR: postgres
+      DB_ADDR: keycloak-db
       DB_DATABASE: default_database
       DB_USER: username
       DB_SCHEMA: public
       DB_PASSWORD: password
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: admin
-        # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
-        # JDBC_PARAMS: "ssl=true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: false
+      PROXY_ADDRESS_FORWARDING: true
+      KEYCLOAK_FRONTEND_URL: https://localhost/auth/
+      KC_PROXY: edge
     networks:
       - hostnet
     ports:
         - 8080:8080
     depends_on:
-        - postgres
+        - keycloak-db
+
+  keycloak-db:
+    image: postgres
+    profiles: ["keycloak"]
+    hostname: keycloak-db
+    container_name: keycloak-db
+    networks:
+      - hostnet
+    ports:
+    - 5434:5432
+    environment:
+      POSTGRES_USER: username # The PostgreSQL user (useful to connect to the database)
+      POSTGRES_PASSWORD: password # The PostgreSQL password (useful to connect to the database)
+      POSTGRES_DB: default_database # The PostgreSQL default database (automatically created at first launch)
+    volumes:
+      - kc_postgres_volume:/var/lib/postgresql/data/
 
   iotagent-opcua:
     image: iotagent4fiware/iotagent-opcua:2.2.7
+    profiles: [ "agents", "opcua" ]
     hostname: iotagent-opcua
-    depends_on:
-      - mongodb
-      - orion
+    container_name: iotagent-opcua
+    # depends_on:
+    #   - mongodb
+    #   - orion
     networks:
       - hostnet
     ports:
@@ -229,16 +305,17 @@ services:
     volumes:
       - ./conf/iotagent-opcua:/opt/iotagent-opcua/conf
 
-
   iotagent-json:
     image: quay.io/fiware/iotagent-json:3.6.0
+    profiles: [ "agents", "json" ]
     hostname: iotagent-json
-    depends_on:
-      - mongodb
+    container_name: iotagent-json
+    # depends_on:
+    #   - mongodb
     networks:
       - hostnet
     ports:
-      - "4042:4042"
+      - "4042:4041"
       - "7896:7896"
     environment:
       - IOTA_CB_HOST=orion # name of the context broker to update context
@@ -257,15 +334,17 @@ services:
       - IOTA_DEFAULT_RESOURCE=/iot/json
 
   iotagent-aas:
-    image: iotagent4fiware/iotagent-aas:1.0.0
+    image: iotagent4fiware/iotagent-aas:1.0.1
+    profiles: [ "agent", "aas" ]
     hostname: iotagent-aas
-    depends_on:
-      - mongodb
-      - orion
+    container_name: iotagent-aas
+    # depends_on:
+    #   - mongodb
+    #   - orion
     networks:
       - hostnet
     ports:
-      - "4043:4043"
+      - "4043:4041"
       - "7897:7897"
     environment:
       - "DEFAULT_KEY=iot"
@@ -322,22 +401,27 @@ services:
     volumes:
       - ./conf/iotagent-aas:/opt/iotagent-aas/conf
 
-  iotagent-ui-spa:
-    image: iotagent4fiware/iotagent-ui-spa:1.0.0
-    hostname: iotagent-ui-spa
+  iotiotagent-ui-spa:
+    image: iotagent4fiware/iotiotagent-ui-spa:1.0.2
+    profiles: [ "iotagent-ui" ]
+    hostname: iotiotagent-ui-spa
+    container_name: iotiotagent-ui-spa
     depends_on:
-      - iotagent-ui-bff
+      - iotiotagent-ui-bff
     networks:
       - hostnet
     ports:
       - "8087:80"
     environment:
       <<: *common-variables
-      BFF_API_BASE_URL: 'http://localhost:9005'
+      BFF_API_BASE_URL: 'http://localhost:8000/agent/ui/api/v1'
+      APP_BASE_HREF: '/iotagentui/'
 
-  iotagent-ui-bff:
-    image: iotagent4fiware/iotagent-ui-bff:1.0.0
-    hostname: iotagent-ui-bff
+  iotiotagent-ui-bff:
+    image: iotagent4fiware/iotiotagent-ui-bff:1.0.0
+    profiles: [ "iotagent-ui" ]
+    hostname: iotiotagent-ui-bff
+    container_name: iotiotagent-ui-bff
     depends_on:
       - mongodb
     networks:
@@ -347,48 +431,163 @@ services:
     environment:
       <<: *common-variables
       NODE_ENV: 'true'
-      PORT: '9005'
+      PORT: '9000'
       MONGO_HOST: 'mongodb'
       MONGO_PORT: '27017'
       MONGO_DB: 'iotagent_ui'
       AUTH_SECRET: 'secret'
       ADMIN_ACCOUNT: 'true'
 
-  grafana:
-    image: grafana/grafana:10.2.3
-    hostname: grafana
-    container_name: grafana
-    restart: always
-    networks:
-      - hostnet
-    volumes:
-      - grafanavolume:/var/lib/grafana
-    ports:
-      - 3000:3000
-    environment:
-      - GF_SERVER_ROOT_URL=http://localhost/grafana
-
-  pgadmin:
-    image: dpage/pgadmin4:8.4
-    container_name: pgadmin4
-    restart: always
-    networks:
-      - hostnet
+  kong-migrations:
+    image: "${KONG_DOCKER_TAG:-kong:latest}"
+    container_name: kong-migrations
+    command: kong migrations bootstrap
+    profiles: [ "kong" ]
     depends_on:
-      - postgres
-    ports:
-      - "5050:80"
+      - kong-db
     environment:
-      PGADMIN_DEFAULT_EMAIL: "test@test.it"
-      PGADMIN_DEFAULT_PASSWORD: "password"
-    volumes:
-      - pgadminvolume:/var/lib/pgadmin
+      <<: *kong-env
+    secrets:
+      - kong_postgres_password
+    networks:
+      - hostnet
+    restart: on-failure
 
-## By default, this config uses default local driver,
-## For custom volumes replace with volume driver configuration.
+  kong-migrations-up:
+    image: "${KONG_DOCKER_TAG:-kong:latest}"
+    container_name: kong-migrations-up
+    command: kong migrations up && kong migrations finish
+    profiles: [ "kong" ]
+    depends_on:
+      - kong-db
+    environment:
+      <<: *kong-env
+    secrets:
+      - kong_postgres_password
+    networks:
+      - hostnet
+    restart: on-failure
+  
+  kong-db-import:
+    image: "${KONG_DOCKER_TAG:-kong:latest}"
+    container_name: kong-db-import
+    command: kong config db_import /opt/kong/kong.yaml
+    profiles: [ "kong" ]
+    depends_on:
+      - kong-db
+      - kong-migrations
+      - kong-migrations-up
+    environment:
+      <<: *kong-env
+    secrets:
+      - kong_postgres_password
+    volumes:
+      - ./conf/kong:/opt/kong
+    networks:
+      - hostnet
+    restart: on-failure
+
+  kong:
+    image: "${KONG_DOCKER_TAG:-kong:latest}"
+    container_name: kong
+    profiles: [ "kong" ]
+    hostname: kong
+    depends_on:
+      - kong-db
+    user: "${KONG_USER:-kong}"
+    environment:
+      <<: *kong-env
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_PROXY_LISTEN: "${KONG_PROXY_LISTEN:-0.0.0.0:8000}"
+      KONG_ADMIN_LISTEN: "${KONG_ADMIN_LISTEN:-0.0.0.0:8001}"
+      KONG_ADMIN_GUI_LISTEN: "${KONG_ADMIN_GUI_LISTEN:-0.0.0.0:8002}"
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_PREFIX: ${KONG_PREFIX:-/var/run/kong}
+      KONG_DECLARATIVE_CONFIG: "/opt/kong/kong.yaml"
+    secrets:
+      - kong_postgres_password
+    networks:
+      - hostnet
+    ports:
+      # The following two environment variables default to an insecure value (0.0.0.0)
+      # according to the CIS Security test.
+      - "${KONG_INBOUND_PROXY_LISTEN:-0.0.0.0}:8000:8000/tcp"
+      - "${KONG_INBOUND_SSL_PROXY_LISTEN:-0.0.0.0}:9443:9443/tcp"
+      # Making them mandatory but undefined, like so would be backwards-breaking:
+      # - "${KONG_INBOUND_PROXY_LISTEN?Missing inbound proxy host}:8000:8000/tcp"
+      # - "${KONG_INBOUND_SSL_PROXY_LISTEN?Missing inbound proxy ssl host}:8443:8443/tcp"
+      # Alternative is deactivating check 5.13 in the security bench, if we consider Kong's own config to be enough security here
+
+      - "8001:8001/tcp"
+      - "8444:8444/tcp"
+      - "8002:8002/tcp"
+    healthcheck:
+      test: [ "CMD", "kong", "health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: on-failure:5
+    read_only: true
+    volumes:
+      - kong_prefix_vol:${KONG_PREFIX:-/var/run/kong}
+      - kong_tmp_vol:/tmp
+      - ./config:/opt/kong
+    security_opt:
+      - no-new-privileges
+
+  kong-db:
+    image: postgres:9.5
+    container_name: kong-db
+    profiles: [ "kong" ]
+    environment:
+      POSTGRES_DB: ${KONG_PG_DATABASE:-kong}
+      POSTGRES_USER: ${KONG_PG_USER:-kong}
+      POSTGRES_PASSWORD_FILE: /run/secrets/kong_postgres_password
+    secrets:
+      - kong_postgres_password
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-d",
+          "${KONG_PG_DATABASE:-kong}",
+          "-U",
+          "${KONG_PG_USER:-kong}"
+        ]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    restart: on-failure
+    stdin_open: true
+    tty: true
+    ports:
+      - 5433:5432
+    networks:
+      - hostnet
+    volumes:
+      - kong_data:/var/lib/postgresql/data
+
+  token-refresh:
+    image: token-refresh
+    container_name: token-refresh
+    build: ./build/token-refresh
+    profiles: [ "kong" ]
+    environment:
+      KONG_ADMIN: "http://kong:8001"
+      AUTH_ENDPOINT: "http://150.140.148.141:9000/oauth2/token"
+      ROUTE_NAME: "aas-server-route"
+      USERNAME: "admin"
+      PASSWORD: "admin"
+    networks:
+      - hostnet
+
 volumes:
   mongodb_volume:
   postgres_volume:
+  kc_postgres_volume:
   pgadminvolume:
   grafanavolume:
   data1-1:
@@ -399,6 +598,19 @@ volumes:
   data3-2:
   data4-1:
   data4-2:
+  kong_data: {}
+  kong_prefix_vol:
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+  kong_tmp_vol:
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
 
 networks:
    hostnet:
+
+secrets:
+  kong_postgres_password:
+    file: ./conf/kong/POSTGRES_PASSWORD
