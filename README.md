@@ -29,7 +29,13 @@ Open Innovation Platform for optimising production systems by combining product 
 
 <h3>Access the UIs</h3>
 
-1. Draco at (https://localhost:8443/nifi)
+1. Draco at (https://localhost/draco/nifi)
+2. IotAgent UI at (https://localhost/iotagentui)
+3. Keycloak at (https://localhost/auth)
+4. Grafana at (https://localhost/grafana)
+5. MINIO at (https://localhost/minio/ui)
+6. PgAdmin at (https://localhost/pgadmin)
+7. Kong at (http://localhost:8002)
 
 <br>
 
