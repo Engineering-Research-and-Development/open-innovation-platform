@@ -52,26 +52,26 @@ services:
       - mongodb_volume:/data
 
   postgres:
-    image: postgres
+    image: postgres:17.2
     hostname: postgres
     networks:
       - hostnet
     ports:
     - 5432:5432
     environment:
-      POSTGRES_USER: username # The PostgreSQL user (useful to connect to the database)
-      POSTGRES_PASSWORD: password # The PostgreSQL password (useful to connect to the database)
-      POSTGRES_DB: default_database # The PostgreSQL default database (automatically created at first launch)
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: default_database
     volumes:
       - postgres_volume:/var/lib/postgresql/data/
 
   # Settings and configurations that are common for all containers
   x-minio-common: &minio-common
-    image: quay.io/minio/minio:RELEASE.2024-05-10T01-41-38Z
+    image: quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z
     command: server --console-address ":9001" http://minio{1...4}/data{1...2}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    expose:
+      - "9000"
+      - "9001"
     env_file:
       - ./conf/minio/minio.env
     healthcheck:
@@ -125,7 +125,7 @@ services:
     networks:
       - hostnet
     volumes:
-      - ./conf/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./conf/minio/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -148,27 +148,46 @@ services:
       - ./conf/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
   
   keycloak:
-    image: quay.io/keycloak/keycloak:14.0.0
+    image: quay.io/keycloak/keycloak:26.0.6
+    command: start-dev
     environment:
-      DB_VENDOR: POSTGRES
-      DB_ADDR: postgres
-      DB_DATABASE: default_database
-      DB_USER: username
-      DB_SCHEMA: public
-      DB_PASSWORD: password
-      KEYCLOAK_USER: admin
-      KEYCLOAK_PASSWORD: admin
-        # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
-        # JDBC_PARAMS: "ssl=true"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://kc-postgres:5432/keycloak
+      DB_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_LOG_LEVEL: info
+      KC_METRICS_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
     networks:
       - hostnet
     ports:
         - 8080:8080
     depends_on:
-        - postgres
+        - kc-postgres
+  
+  kc-postgres:
+    image: postgres:17.2
+    hostname: kc-postgres
+    networks:
+      - hostnet
+    expose:
+    - 5432
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak 
+      POSTGRES_DB: keycloak
+    volumes:
+      - kc_volume:/var/lib/postgresql/data/
 
   iotagent-opcua:
-    image: iotagent4fiware/iotagent-opcua:2.2.7
+    image: iotagent4fiware/iotagent-opcua:2.2.8
     hostname: iotagent-opcua
     depends_on:
       - mongodb
@@ -230,34 +249,34 @@ services:
       - ./conf/iotagent-opcua:/opt/iotagent-opcua/conf
 
 
-  iotagent-json:
-    image: quay.io/fiware/iotagent-json:3.6.0
-    hostname: iotagent-json
-    depends_on:
-      - mongodb
-    networks:
-      - hostnet
-    ports:
-      - "4042:4042"
-      - "7896:7896"
-    environment:
-      - IOTA_CB_HOST=orion # name of the context broker to update context
-      - IOTA_CB_PORT=1026 # port the context broker listens on to update context
-      - IOTA_NORTH_PORT=4042
-      - IOTA_REGISTRY_TYPE=mongodb #Whether to hold IoT device info in memory or in a database
-      - IOTA_LOG_LEVEL=DEBUG # The log level of the IoT Agent
-      - IOTA_DEFAULT_EXPRESSION_LANGUAGE=jexl
-      - IOTA_TIMESTAMP=true # Supply timestamp information with each measurement
-      - IOTA_CB_NGSI_VERSION=v2 # use NGSIv2 when sending updates for active attributes
-      - IOTA_MONGO_HOST=mongodb # The host name of MongoDB
-      - IOTA_MONGO_PORT=27017 # The port mongoDB is listening on
-      - IOTA_MONGO_DB=iotagent_json # The name of the database used in mongoDB
-      - IOTA_HTTP_PORT=7896 # The port used for device traffic over HTTP
-      - IOTA_PROVIDER_URL=http://iotagent-json:4042
-      - IOTA_DEFAULT_RESOURCE=/iot/json
+  # iotagent-json:
+  #   image: quay.io/fiware/iotagent-json:3.6.0
+  #   hostname: iotagent-json
+  #   depends_on:
+  #     - mongodb
+  #   networks:
+  #     - hostnet
+  #   ports:
+  #     - "4042:4041"
+  #     - "7896:7896"
+  #   environment:
+  #     - IOTA_CB_HOST=orion # name of the context broker to update context
+  #     - IOTA_CB_PORT=1026 # port the context broker listens on to update context
+  #     - IOTA_NORTH_PORT=4041
+  #     - IOTA_REGISTRY_TYPE=mongodb #Whether to hold IoT device info in memory or in a database
+  #     - IOTA_LOG_LEVEL=DEBUG # The log level of the IoT Agent
+  #     - IOTA_DEFAULT_EXPRESSION_LANGUAGE=jexl
+  #     - IOTA_TIMESTAMP=true # Supply timestamp information with each measurement
+  #     - IOTA_CB_NGSI_VERSION=v2 # use NGSIv2 when sending updates for active attributes
+  #     - IOTA_MONGO_HOST=mongodb # The host name of MongoDB
+  #     - IOTA_MONGO_PORT=27017 # The port mongoDB is listening on
+  #     - IOTA_MONGO_DB=iotagent_json # The name of the database used in mongoDB
+  #     - IOTA_HTTP_PORT=7896 # The port used for device traffic over HTTP
+  #     - IOTA_PROVIDER_URL=http://iotagent-json:4041
+  #     - IOTA_DEFAULT_RESOURCE=/iot/json
 
   iotagent-aas:
-    image: iotagent4fiware/iotagent-aas:1.0.0
+    image: iotagent4fiware/iotagent-aas:1.0.2
     hostname: iotagent-aas
     depends_on:
       - mongodb
@@ -265,7 +284,7 @@ services:
     networks:
       - hostnet
     ports:
-      - "4043:4043"
+      - "4043:4041"
       - "7897:7897"
     environment:
       - "DEFAULT_KEY=iot"
@@ -279,14 +298,14 @@ services:
       - "IOTA_CB_SERVICE=aas_pioneer"
       # It depends on use case e.g. "smc", "waam"
       - "IOTA_CB_SUBSERVICE=/smc"
-      - "IOTA_NORTH_PORT=4043"
+      - "IOTA_NORTH_PORT=4041"
       - "IOTA_REGISTRY_TYPE=mongodb"
       - "IOTA_MONGO_HOST=mongodb"
       - "IOTA_MONGO_PORT=27017"
       - "IOTA_MONGO_DB=iotagent_aas"
       - "IOTA_SERVICE=aas_ticket"
       - "IOTA_SUBSERVICE=/demo"
-      - "IOTA_PROVIDER_URL=http://iotagent-aas:4043"
+      - "IOTA_PROVIDER_URL=http://iotagent-aas:4041"
       - "IOTA_DEVICEREGDURATION=P20Y"
       - "IOTA_DEFAULTTYPE=Device"
       - "IOTA_DEFAULTRESOURCE=/iot/aas"
@@ -323,7 +342,7 @@ services:
       - ./conf/iotagent-aas:/opt/iotagent-aas/conf
 
   iotagent-ui-spa:
-    image: iotagent4fiware/iotagent-ui-spa:1.0.0
+    image: iotagent4fiware/iotagent-ui-spa:1.0.3
     hostname: iotagent-ui-spa
     depends_on:
       - iotagent-ui-bff
@@ -333,10 +352,10 @@ services:
       - "8087:80"
     environment:
       <<: *common-variables
-      BFF_API_BASE_URL: 'http://localhost:9005'
+      BFF_API_BASE_URL: 'http://localhost:9005/api/v1'
 
   iotagent-ui-bff:
-    image: iotagent4fiware/iotagent-ui-bff:1.0.0
+    image: iotagent4fiware/iotagent-ui-bff:1.0.2
     hostname: iotagent-ui-bff
     depends_on:
       - mongodb
@@ -347,7 +366,7 @@ services:
     environment:
       <<: *common-variables
       NODE_ENV: 'true'
-      PORT: '9005'
+      PORT: '9000'
       MONGO_HOST: 'mongodb'
       MONGO_PORT: '27017'
       MONGO_DB: 'iotagent_ui'
@@ -366,7 +385,7 @@ services:
     ports:
       - 3000:3000
     environment:
-      - GF_SERVER_ROOT_URL=http://localhost/grafana
+      - GF_SERVER_ROOT_URL=http://localhost:3000
 
   pgadmin:
     image: dpage/pgadmin4:8.4
@@ -389,6 +408,7 @@ services:
 volumes:
   mongodb_volume:
   postgres_volume:
+  kc_volume:
   pgadminvolume:
   grafanavolume:
   data1-1:
