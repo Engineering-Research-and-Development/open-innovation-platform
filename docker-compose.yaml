@@ -150,21 +150,8 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.6
     command: start-dev
-    environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://kc-postgres:5432/keycloak
-      DB_DATABASE: keycloak
-      KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloak
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_PORT: 8080
-      KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: false
-      KC_LOG_LEVEL: info
-      KC_METRICS_ENABLED: true
-      KC_HEALTH_ENABLED: true
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+    env_file:
+      - conf/keycloak/keycloak.env
     networks:
       - hostnet
     ports:
@@ -197,83 +184,34 @@ services:
     ports:
       - "4041:4041"
       - "9229:9229"
-    environment:
-      - "CONFIGURATION_TYPE=auto"
-      - "CONFIG_RETRIEVAL=false"
-      - "DEFAULT_KEY=iot"
-      - "DEFAULT_TRANSPORT=OPCUA"
-      - "IOTA_LOGLEVEL=DEBUG"
-      - "IOTA_TIMESTAMP=true"
-      - "IOTA_CB_HOST=orion"
-      - "IOTA_CB_PORT=1026"
-      - "IOTA_CB_NGSIVERSION=v2"
-      - "IOTA_CB_NGSILDCONTEXT=https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"
-      - "IOTA_CB_SERVICE=opcua_pioneer"
-      # It depends on use case e.g. "smc", "waam"
-      - "IOTA_CB_SUBSERVICE=/smc"
-      - "IOTA_NORTH_PORT=4041"
-      - "IOTA_REGISTRY_TYPE=mongodb"
-      - "IOTA_MONGO_HOST=mongodb"
-      - "IOTA_MONGO_PORT=27017"
-      - "IOTA_MONGO_DB=iotagent_opcua"
-      - "IOTA_SERVICE=opcua_pioneer"
-      - "IOTA_SUBSERVICE=/smc"
-      - "IOTA_PROVIDER_URL=http://iotagent-opcua:4041"
-      - "IOTA_DEVICEREGDURATION=P20Y"
-      - "IOTA_DEFAULTTYPE=Device"
-      - "IOTA_DEFAULTRESOURCE=/iot/opcua"
-      - "IOTA_EXPLICITATTRS=true"
-      - "IOTA_EXTENDED_FORBIDDEN_CHARACTERS=[]"
-      - "IOTA_AUTOPROVISION=true"
-      - "IOTA_EXPRESS_LIMIT=50mb"
-      # It depends on use case. OPCUA Server address
-      - "IOTA_OPCUA_ENDPOINT=opc.tcp://opcuaserverhost:5001/UA/Server"
-      - "IOTA_OPCUA_SECURITY_MODE=None"
-      - "IOTA_OPCUA_SECURITY_POLICY=None"
-      #- "IOTA_OPCUA_SECURITY_USERNAME=null"
-      #- "IOTA_OPCUA_SECURITY_PASSWORD=null"
-      - "IOTA_OPCUA_UNIQUE_SUBSCRIPTION=false"
-      - "IOTA_OPCUA_SUBSCRIPTION_NOTIFICATIONS_PER_PUBLISH=1000"
-      - "IOTA_OPCUA_SUBSCRIPTION_PUBLISHING_ENABLED=true"
-      - "IOTA_OPCUA_SUBSCRIPTION_REQ_LIFETIME_COUNT=100"
-      - "IOTA_OPCUA_SUBSCRIPTION_REQ_MAX_KEEP_ALIVE_COUNT=10"
-      - "IOTA_OPCUA_SUBSCRIPTION_REQ_PUBLISHING_INTERVAL=1000"
-      - "IOTA_OPCUA_SUBSCRIPTION_PRIORITY=128"
-      - "IOTA_OPCUA_MT_POLLING=false"
-      - "IOTA_OPCUA_MT_AGENT_ID=age01_"
-      - "IOTA_OPCUA_MT_ENTITY_ID=age01_smc"
-      - "IOTA_OPCUA_MT_ENTITY_TYPE=Device"
-      - "IOTA_OPCUA_MT_NAMESPACE_IGNORE=0,7"
-      - "IOTA_OPCUA_MT_STORE_OUTPUT=true"
+    env_file:
+      - conf/iotagent-opcua/iotagent-opcua.env
     volumes:
       - ./conf/iotagent-opcua:/opt/iotagent-opcua/conf
 
 
-  # iotagent-json:
-  #   image: quay.io/fiware/iotagent-json:3.6.0
-  #   hostname: iotagent-json
-  #   depends_on:
-  #     - mongodb
-  #   networks:
-  #     - hostnet
-  #   ports:
-  #     - "4042:4041"
-  #     - "7896:7896"
-  #   environment:
-  #     - IOTA_CB_HOST=orion # name of the context broker to update context
-  #     - IOTA_CB_PORT=1026 # port the context broker listens on to update context
-  #     - IOTA_NORTH_PORT=4041
-  #     - IOTA_REGISTRY_TYPE=mongodb #Whether to hold IoT device info in memory or in a database
-  #     - IOTA_LOG_LEVEL=DEBUG # The log level of the IoT Agent
-  #     - IOTA_DEFAULT_EXPRESSION_LANGUAGE=jexl
-  #     - IOTA_TIMESTAMP=true # Supply timestamp information with each measurement
-  #     - IOTA_CB_NGSI_VERSION=v2 # use NGSIv2 when sending updates for active attributes
-  #     - IOTA_MONGO_HOST=mongodb # The host name of MongoDB
-  #     - IOTA_MONGO_PORT=27017 # The port mongoDB is listening on
-  #     - IOTA_MONGO_DB=iotagent_json # The name of the database used in mongoDB
-  #     - IOTA_HTTP_PORT=7896 # The port used for device traffic over HTTP
-  #     - IOTA_PROVIDER_URL=http://iotagent-json:4041
-  #     - IOTA_DEFAULT_RESOURCE=/iot/json
+  iotagent-json:
+    image: quay.io/fiware/iotagent-json:3.6.0
+    hostname: iotagent-json
+    depends_on:
+      - mongodb
+    networks:
+      - hostnet
+    ports:
+      - "4042:4041"
+      - "7896:7896"
+    env_file:
+      - conf/iotagent-json/iotagent-json.env
+
+  aas-proxy:
+    build: ./build/aas-proxy
+    hostname: aas-proxy
+    networks:
+      - hostnet
+    ports:
+      - 3001:3000
+    env_file:
+      - conf/aas-proxy/aas-proxy.env
 
   iotagent-aas:
     image: iotagent4fiware/iotagent-aas:1.0.2
@@ -281,63 +219,14 @@ services:
     depends_on:
       - mongodb
       - orion
+      - aas-proxy
     networks:
       - hostnet
     ports:
       - "4043:4041"
       - "7897:7897"
-    environment:
-      - "DEFAULT_KEY=iot"
-      - "DEFAULT_TRANSPORT=HTTP"
-      - "IOTA_LOGLEVEL=DEBUG"
-      - "IOTA_TIMESTAMP=true"
-      - "IOTA_CB_HOST=orion"
-      - "IOTA_CB_PORT=1026"
-      - "IOTA_CB_NGSIVERSION=v2"
-      - "IOTA_CB_NGSILDCONTEXT=https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"
-      - "IOTA_CB_SERVICE=aas_pioneer"
-      # It depends on use case e.g. "smc", "waam"
-      - "IOTA_CB_SUBSERVICE=/smc"
-      - "IOTA_NORTH_PORT=4041"
-      - "IOTA_REGISTRY_TYPE=mongodb"
-      - "IOTA_MONGO_HOST=mongodb"
-      - "IOTA_MONGO_PORT=27017"
-      - "IOTA_MONGO_DB=iotagent_aas"
-      - "IOTA_SERVICE=aas_ticket"
-      - "IOTA_SUBSERVICE=/demo"
-      - "IOTA_PROVIDER_URL=http://iotagent-aas:4041"
-      - "IOTA_DEVICEREGDURATION=P20Y"
-      - "IOTA_DEFAULTTYPE=Device"
-      - "IOTA_DEFAULTRESOURCE=/iot/aas"
-      - "IOTA_EXPLICITATTRS=true"
-      - "IOTA_EXTENDED_FORBIDDEN_CHARACTERS=[]"
-      - "IOTA_AUTOPROVISION=true"
-      - "IOTA_MQTT_PROTOCOL=mqtt"
-      - "IOTA_MQTT_HOST=mosquitto"
-      - "IOTA_MQTT_PORT=1883"
-      - "IOTA_MQTT_CA="
-      - "IOTA_MQTT_CERT="
-      - "IOTA_MQTT_KEY="
-      - "IOTA_MQTT_REJECT_UNAUTHORIZED=true"
-      - "IOTA_MQTT_USERNAME="
-      - "IOTA_MQTT_PASSWORD="
-      - "IOTA_MQTT_QOS=0"
-      - "IOTA_MQTT_RETAIN=false"
-      - "IOTA_MQTT_RETRIES=5"
-      - "IOTA_MQTT_RETRY_TIME=5"
-      - "IOTA_MQTT_KEEPALIVE=60"
-      - "IOTA_MQTT_AVOID_LEADING_SLASH=false"
-      - "IOTA_MQTT_DISABLED=false"
-      - "IOTA_HTTP_PORT=7897"
-      - "IOTA_HTTP_TIMEOUT=1000"
-      - "IOTA_HTTP_KEY="
-      - "IOTA_HTTP_CERT="
-      # It depends on use case. AAS Server address
-      - "IOTA_AAS_ENDPOINT=http://aasserverhost:9000/aas"
-      - "IOTA_AAS_MT_AGENT_ID=age01_"
-      - "IOTA_AAS_MT_ENTITY_ID=aas_smc"
-      - "IOTA_AAS_MT_ENTITY_TYPE=Device"
-      - "IOTA_AAS_MT_STORE_OUTPUT=true"
+    env_file:
+      - conf/iotagent-aas/iotagent-aas.env
     volumes:
       - ./conf/iotagent-aas:/opt/iotagent-aas/conf
 

@@ -166,7 +166,7 @@ config.iota = {
         /**
          * Used as fallbackPath
          */
-        subservice: '/smc'
+        subservice: '/waam'
     },
     /**
      * Configuration of the North Port of the IoT Agent.
@@ -175,7 +175,7 @@ config.iota = {
         /**
          * Port where the IoT Agent will be listening for NGSI and Provisioning requests.
          */
-        port: 4043
+        port: 4041
     },
 
     /**
@@ -272,12 +272,12 @@ config.iota = {
     /**
      * Default subservice, for IoT Agent installations that won't require preregistration.
      */
-    subservice: '/smc',
+    subservice: '/waam',
     /**
      * URL Where the IoT Agent Will listen for incoming updateContext and queryContext requests (for commands and
      * passive attributes). This URL will be sent in the Context Registration requests.
      */
-    providerUrl: 'http://iotagent-aas:4043',
+    providerUrl: 'http://iotagent-aas:4041',
     /**
      * Default maximum expire date for device registrations.
      */
@@ -310,7 +310,7 @@ config.aas = {
     /**
      * Endpoint where the IoT Agent will listen for an active AAS Server.
      */
-    endpoint: 'http://aasserverhost:9000',
+    endpoint: 'http://aasserverhost:aasserverport',
     /**
      * Version of the aas API that the agent will interact with
      */
@@ -325,7 +325,7 @@ config.mappingTool = {
     /**
      * entityId to be assigned to the newly generated entity from MappingTool execution
      */
-    entityId: 'age01_smc',
+    entityId: 'age01_waam',
     /**
      * entityType to be assigned to the newly generated entity from MappingTool execution
      */
@@ -364,7 +364,7 @@ config.defaultKey = 'iot';
 /**
  * Default transport protocol when no transport is provisioned through the Device Provisioning API.
  */
-config.defaultTransport = 'MQTT';
+config.defaultTransport = 'HTTP';
 /**
  * flag indicating whether the node server will be executed in multi-core option (true) or it will be a
  * single-thread one (false).
