@@ -1,0 +1,121 @@
+http:
+  routers:
+    oauth2-proxy-route:
+      rule: "Host(`oauth2-proxy.pioneer-project.eu`)"
+      middlewares:
+        - auth-headers
+      service: oauth-backend
+    keycloak-proxy-route:
+      rule: "Host(`keycloak.pioneer-project.eu`)"
+      service: keycloak
+    grafana-route:
+      rule: "Host(`grafana.pioneer-project.eu`)"
+      service: grafana-service
+      middlewares:
+        - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
+    grafana-route-2:
+      rule: "Host(`grafana.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      service: grafana-service
+      middlewares:
+        - oauth-auth-wo-redirect # unauthenticated session will return a 401
+    services-grafana-route:
+      rule: "Host(`grafana.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      middlewares:
+        - auth-headers
+      service: oauth-backend
+    orion-route:
+      rule: "Host(`orion.pioneer-project.eu`)"
+      service: orion-service
+      middlewares:
+        - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
+    orion-route-2:
+      rule: "Host(`orion.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      service: orion-service
+      middlewares:
+        - oauth-auth-wo-redirect # unauthenticated session will return a 401
+    services-orion-route:
+      rule: "Host(`orion.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      middlewares:
+        - auth-headers
+      service: oauth-backend
+    draco-route:
+      rule: "Host(`draco.pioneer-project.eu`) && PathPrefix(`/nifi`)"
+      service: draco-service
+      middlewares:
+        - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
+    draco-route-2:
+      rule: "Host(`draco.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      service: draco-service
+      middlewares:
+        - oauth-auth-wo-redirect # unauthenticated session will return a 401
+    services-draco-route:
+      rule: "Host(`draco.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      middlewares:
+        - auth-headers
+      service: oauth-backend
+    minio-route:
+      rule: "Host(`minio.pioneer-project.eu`)"
+      service: minio-service
+      middlewares:
+        - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
+    minio-route-2:
+      rule: "Host(`minio.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      service: minio-service
+      middlewares:
+        - oauth-auth-wo-redirect # unauthenticated session will return a 401
+    services-minio-route:
+      rule: "Host(`minio.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      middlewares:
+        - auth-headers
+      service: oauth-backend
+
+  services:
+    grafana-service:
+      loadBalancer:
+        servers:
+          - url: http://grafana:3000
+    oauth-backend:
+      loadBalancer:
+        servers:
+          - url: http://oauth2-proxy:4180
+    keycloak:
+      loadBalancer:
+        servers:
+          - url: http://keycloak:8080
+    orion-service:
+      loadBalancer:
+        servers:
+          - url: http://orion:1026
+    draco-service:
+      loadBalancer:
+        servers:
+          - url: https://draco:8443
+    minio-service:
+      loadBalancer:
+        servers:
+          - url: http://minio:9001
+
+  middlewares:
+    auth-headers:
+      headers:
+        stsSeconds: 315360000
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        frameDeny: true
+    oauth-auth-redirect:
+      forwardAuth:
+        address: http://oauth2-proxy:4180
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-Auth-Request-Access-Token
+          - Authorization
+    oauth-auth-wo-redirect:
+      forwardAuth:
+        address: http://oauth2-proxy:4180/oauth2/auth
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-Auth-Request-Access-Token
+          - Authorization
