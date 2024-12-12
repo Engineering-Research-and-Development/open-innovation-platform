@@ -17,6 +17,8 @@ services:
       --oidc-extra-audience=account
     ports: []
     hostname: oauth2-proxy
+    env_file:
+        - conf/oauth2-proxy/oauth2-proxy.env
     volumes:
       - "./conf/oauth2-proxy/oauth2-proxy-traefik.cfg:/etc/oauth2-proxy.cfg"
     networks:
@@ -27,6 +29,24 @@ services:
   gateway:
     container_name: traefik
     image: traefik:v2.11.13
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/etc/traefik/"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
+      - "--metrics.prometheus.addEntryPointsLabels=true"
+      - "--metrics.prometheus.addrouterslabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
+      - "--metrics.prometheus.entryPoint=metrics"
+      - "--entryPoints.metrics.address=:8082"
+      - "--log.level=DEBUG"
+      - "--accesslog=true"
+      - "--accesslog.fields.defaultMode=keep"
+      - "--accesslog.fields.names.RouterName=keep"
     volumes:
       - "./conf/traefik:/etc/traefik"
     ports:
