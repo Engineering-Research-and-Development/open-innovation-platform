@@ -1,10 +1,11 @@
 version: "3.4"
 
 x-common-variables: &common-variables
-  KEYCLOAK_URL:
-  KEYCLOAK_REALM:
-  KEYCLOAK_CLIENT_ID:
-  KEYCLOAK_REDIRECT_URI:
+  KEYCLOAK_URL: http://keycloak.pioneer-project.eu/auth
+  KEYCLOAK_REALM: pioneer
+  KEYCLOAK_CLIENT_ID: iotagentui_client
+  KEYCLOAK_REDIRECT_URI: http://iotagent-ui.pioneer-project.eu
+  KEYCLOAK_REALM_PUBLIC_KEY: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzvOJL+s6C+7KweQNXjdq9sj8HWDDI7pxHFqdQJ7OUhWy2FvsjEVCeLo0lpmjDlv0A9dVGOgydmrda065rsJ6jkryKMec4GOc6gcTLKCA2uH4IJJcQK607zqihTk1BY63EiIwHPtsufv40s1EYczofRRdNjWId0Fjx25m8hCmVpcS6J55RDXf4l/KzPytdegQowJAqVpWUlEHe5/hvYCDK7Xdd3bm3gUKU9oRYcXamExFsr/EVGo6Q2VR+Q0LrrqeqHN2Y91OCCKOMmlOrGpbufmK301nf3GGCkiNdlGxwDFZpsUa2xBPUJDqVsRzmmBbpG1neZZ3PULaSb4p7oWWIQIDAQAB
 
 services:
   oauth2-proxy:
@@ -217,7 +218,8 @@ services:
       - "8087:80"
     environment:
       <<: *common-variables
-      BFF_API_BASE_URL: 'http://localhost:9005/api/v1'
+      BFF_API_BASE_URL: 'http://iotagent-ui.pioneer-project.eu/api/v1'
+      APP_BASE_HREF: '/'
 
   iotagent-ui-bff:
     image: iotagent4fiware/iotagent-ui-bff:1.0.2
@@ -255,6 +257,7 @@ services:
   pgadmin:
     image: dpage/pgadmin4:8.4
     container_name: pgadmin4
+    hostname: pgadmin4
     restart: always
     networks:
       - hostnet

@@ -68,6 +68,27 @@ http:
       middlewares:
         - auth-headers
       service: oauth-backend
+    iotagent-ui-api-route:
+      rule: "Host(`iotagent-ui.pioneer-project.eu`) && PathPrefix(`/api/`)"
+      service: iotagentui-bff-service
+    iotagent-ui-route:
+      rule: "Host(`iotagent-ui.pioneer-project.eu`)"
+      service: iotagentui-spa-service
+    pgadmin-route:
+      rule: "Host(`pgadmin.pioneer-project.eu`)"
+      service: pgadmin-service
+      middlewares:
+        - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
+    pgadmin-route-2:
+      rule: "Host(`pgadmin.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      service: pgadmin-service
+      middlewares:
+        - oauth-auth-wo-redirect # unauthenticated session will return a 401
+    services-pgadmin-route:
+      rule: "Host(`pgadmin.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      middlewares:
+        - auth-headers
+      service: oauth-backend
 
   services:
     grafana-service:
@@ -94,6 +115,18 @@ http:
       loadBalancer:
         servers:
           - url: http://minio:9001
+    iotagentui-spa-service:
+      loadBalancer:
+        servers:
+          - url: http://iotagent-ui-spa:80
+    iotagentui-bff-service:
+      loadBalancer:
+        servers:
+          - url: http://iotagent-ui-bff:9000
+    pgadmin-service:
+      loadBalancer:
+        servers:
+          - url: http://pgadmin4:80
 
   middlewares:
     auth-headers:
