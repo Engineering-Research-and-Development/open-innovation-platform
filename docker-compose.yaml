@@ -155,6 +155,7 @@ services:
       - kc-postgres
     volumes:
       - ./conf/keycloak/realms/realm-pioneer.json:/opt/keycloak/data/import/realm-pioneer.json
+      - ./conf/keycloak/theme:/opt/keycloak/themes/pioneer
   
   kc-postgres:
     image: postgres:17.2
@@ -185,7 +186,6 @@ services:
       - conf/iotagent-opcua/iotagent-opcua.env
     volumes:
       - ./conf/iotagent-opcua:/opt/iotagent-opcua/conf
-
 
   iotagent-json:
     image: quay.io/fiware/iotagent-json:3.6.0

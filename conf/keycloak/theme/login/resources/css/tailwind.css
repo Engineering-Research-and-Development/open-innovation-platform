@@ -1,0 +1,43 @@
+@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: "Quicksand", serif;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active {
+  -webkit-transition-delay: 9999s !important;
+  transition-delay: 9999s !important;
+  background-color: white !important;
+}
+
+@layer utilities {
+  .alert-success {
+    @apply p-4 my-4 rounded-lg flex items-start shadow-2xl shadow-green-600/20 gap-2 text-green-800 border border-green-300 bg-green-50;
+  }
+  .alert-warning {
+    @apply p-4 my-4 rounded-lg flex items-start shadow-2xl shadow-yellow-600/20 gap-2 text-yellow-800 border border-yellow-300 bg-yellow-50;
+  }
+  .alert-error {
+    @apply p-4 my-4 rounded-lg flex items-start shadow-2xl shadow-red-600/20 gap-2 text-red-800 border border-red-300 bg-red-50;
+  }
+  .alert-info {
+    @apply p-4 my-4 rounded-lg flex items-start shadow-2xl shadow-blue-600/20 gap-2 text-blue-800 border border-blue-300 bg-blue-50;
+  }
+  .alert-general {
+    @apply p-4 my-4 rounded-lg flex items-start shadow-2xl shadow-brand-600/20 gap-2 text-brand-800 border border-brand-300 bg-brand-50;
+  }
+  .otp-device{
+    @apply text-brand-600 border-brand-600;
+  }
+}
