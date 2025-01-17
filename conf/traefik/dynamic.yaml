@@ -1,91 +1,154 @@
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: "etc/traefik/certs/fullchain.pem"
+        keyFile: "/etc/traefik/certs/privkey.pem"
+  certificates:
+    - certFile: "/etc/traefik/certs/fullchain.pem"
+      keyFile: "/etc/traefik/certs/privkey.pem"
 http:
   routers:
     oauth2-proxy-route:
       rule: "Host(`oauth2-proxy.pioneer-project.eu`)"
+      entryPoints:
+        - websecure
       middlewares:
         - auth-headers
       service: oauth-backend
     keycloak-proxy-route:
       rule: "Host(`keycloak.pioneer-project.eu`)"
+      entryPoints:
+        - websecure
       service: keycloak
     grafana-route:
       rule: "Host(`grafana.pioneer-project.eu`)"
+      entryPoints:
+        - websecure
       service: grafana-service
       middlewares:
         - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
     grafana-route-2:
       rule: "Host(`grafana.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      entryPoints:
+        - websecure
       service: grafana-service
       middlewares:
         - oauth-auth-wo-redirect # unauthenticated session will return a 401
     services-grafana-route:
       rule: "Host(`grafana.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      entryPoints:
+        - websecure
       middlewares:
         - auth-headers
       service: oauth-backend
     orion-route:
       rule: "Host(`orion.pioneer-project.eu`)"
+      entryPoints:
+        - websecure
       service: orion-service
       middlewares:
         - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
     orion-route-2:
       rule: "Host(`orion.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      entryPoints:
+        - websecure
       service: orion-service
       middlewares:
         - oauth-auth-wo-redirect # unauthenticated session will return a 401
     services-orion-route:
       rule: "Host(`orion.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      entryPoints:
+        - websecure
       middlewares:
         - auth-headers
       service: oauth-backend
     draco-route:
       rule: "Host(`draco.pioneer-project.eu`) && PathPrefix(`/nifi`)"
+      entryPoints:
+        - websecure
       service: draco-service
       middlewares:
         - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
     draco-route-2:
       rule: "Host(`draco.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      entryPoints:
+        - websecure
       service: draco-service
       middlewares:
         - oauth-auth-wo-redirect # unauthenticated session will return a 401
     services-draco-route:
       rule: "Host(`draco.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      entryPoints:
+        - websecure
       middlewares:
         - auth-headers
       service: oauth-backend
     minio-route:
       rule: "Host(`minio.pioneer-project.eu`)"
+      entryPoints:
+        - websecure
       service: minio-service
       middlewares:
         - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
     minio-route-2:
       rule: "Host(`minio.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      entryPoints:
+        - websecure
       service: minio-service
       middlewares:
         - oauth-auth-wo-redirect # unauthenticated session will return a 401
     services-minio-route:
       rule: "Host(`minio.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      entryPoints:
+        - websecure
       middlewares:
         - auth-headers
       service: oauth-backend
     iotagent-ui-api-route:
       rule: "Host(`iotagent-ui.pioneer-project.eu`) && PathPrefix(`/api/`)"
+      entryPoints:
+        - websecure
       service: iotagentui-bff-service
     iotagent-ui-route:
       rule: "Host(`iotagent-ui.pioneer-project.eu`)"
+      entryPoints:
+        - websecure
       service: iotagentui-spa-service
+      middlewares:
+        - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
+    iotagent-ui-route-2:
+      rule: "Host(`iotagent-ui.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      entryPoints:
+        - websecure
+      service: iotagentui-spa-service
+      middlewares:
+        - oauth-auth-wo-redirect # unauthenticated session will return a 401
+    services-iotagent-ui-route:
+      rule: "Host(`iotagent-ui.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - auth-headers
+      service: oauth-backend
     pgadmin-route:
       rule: "Host(`pgadmin.pioneer-project.eu`)"
+      entryPoints:
+        - websecure
       service: pgadmin-service
       middlewares:
         - oauth-auth-redirect # redirects all unauthenticated to oauth2 signin    
     pgadmin-route-2:
       rule: "Host(`pgadmin.pioneer-project.eu`) && PathPrefix(`/no-auto-redirect`)"
+      entryPoints:
+        - websecure
       service: pgadmin-service
       middlewares:
         - oauth-auth-wo-redirect # unauthenticated session will return a 401
     services-pgadmin-route:
       rule: "Host(`pgadmin.pioneer-project.eu`) && PathPrefix(`/oauth2/`)"
+      entryPoints:
+        - websecure
       middlewares:
         - auth-headers
       service: oauth-backend

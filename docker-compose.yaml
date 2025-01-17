@@ -1,12 +1,12 @@
 version: "3.4"
 
 x-common-variables: &common-variables
-  KEYCLOAK_URL: http://keycloak.pioneer-project.eu/auth
+  KEYCLOAK_URL: https://keycloak.pioneer-project.eu/auth
   KEYCLOAK_REALM: pioneer
   KEYCLOAK_CLIENT_ID: iotagentui_client
-  KEYCLOAK_REDIRECT_URI: http://iotagent-ui.pioneer-project.eu
-  KEYCLOAK_REALM_PUBLIC_KEY: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzvOJL+s6C+7KweQNXjdq9sj8HWDDI7pxHFqdQJ7OUhWy2FvsjEVCeLo0lpmjDlv0A9dVGOgydmrda065rsJ6jkryKMec4GOc6gcTLKCA2uH4IJJcQK607zqihTk1BY63EiIwHPtsufv40s1EYczofRRdNjWId0Fjx25m8hCmVpcS6J55RDXf4l/KzPytdegQowJAqVpWUlEHe5/hvYCDK7Xdd3bm3gUKU9oRYcXamExFsr/EVGo6Q2VR+Q0LrrqeqHN2Y91OCCKOMmlOrGpbufmK301nf3GGCkiNdlGxwDFZpsUa2xBPUJDqVsRzmmBbpG1neZZ3PULaSb4p7oWWIQIDAQAB
-
+  KEYCLOAK_REDIRECT_URI: https://iotagent-ui.pioneer-project.eu
+  KEYCLOAK_REALM_PUBLIC_KEY: 
+  
 services:
   oauth2-proxy:
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
@@ -51,6 +51,7 @@ services:
       - "./conf/traefik:/etc/traefik"
     ports:
       - "80:80"
+      - "443:443"
       - "9090:8080"
     depends_on:
       - oauth2-proxy
@@ -237,8 +238,7 @@ services:
     ports:
       - "8087:80"
     environment:
-      <<: *common-variables
-      BFF_API_BASE_URL: 'http://iotagent-ui.pioneer-project.eu/api/v1'
+      BFF_API_BASE_URL: 'https://iotagent-ui.pioneer-project.eu/api/v1'
       APP_BASE_HREF: '/'
 
   iotagent-ui-bff:
@@ -248,10 +248,11 @@ services:
       - mongodb
     networks:
       - hostnet
+    extra_hosts:
+      - keycloak.pioneer-project.eu:172.17.0.1
     ports:
       - "9005:9000"
     environment:
-      <<: *common-variables
       NODE_ENV: 'true'
       PORT: '9000'
       MONGO_HOST: 'mongodb'
@@ -272,7 +273,7 @@ services:
     ports:
       - 3000:3000
     environment:
-      - GF_SERVER_ROOT_URL=http://grafana.pioneer-project.eu
+      - GF_SERVER_ROOT_URL=https://grafana.pioneer-project.eu
 
   pgadmin:
     image: dpage/pgadmin4:8.4
