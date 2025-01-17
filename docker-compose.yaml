@@ -1,5 +1,3 @@
-version: "3.4"
-
 x-common-variables: &common-variables
   KEYCLOAK_URL: https://keycloak.pioneer-project.eu/auth
   KEYCLOAK_REALM: pioneer
@@ -9,6 +7,8 @@ x-common-variables: &common-variables
   
 services:
   oauth2-proxy:
+    container_name: oauth2-proxy
+    profiles: [ "oip-sec" ]
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
     command:
       --config=/etc/oauth2-proxy.cfg
@@ -19,6 +19,7 @@ services:
     hostname: oauth2-proxy
     env_file:
         - conf/oauth2-proxy/oauth2-proxy.env
+    restart: always
     volumes:
       - "./conf/oauth2-proxy/oauth2-proxy-traefik.cfg:/etc/oauth2-proxy.cfg"
     networks:
@@ -27,7 +28,9 @@ services:
       - keycloak.pioneer-project.eu:172.17.0.1
 
   gateway:
-    container_name: traefik
+    profiles: [ "oip-sec" ]
+    container_name: gateway
+    hostname: traefik
     image: traefik:v2.11.13
     command:
       - "--api.insecure=true"
@@ -53,12 +56,12 @@ services:
       - "80:80"
       - "443:443"
       - "9090:8080"
-    depends_on:
-      - oauth2-proxy
     networks:
       hostnet:
 
   orion:
+    container_name: orion
+    profiles: [ "oip-core" ]
     image: fiware/orion:3.10.1
    # image: fiware/orion-ld:1.4.0
     hostname: orion
@@ -72,6 +75,7 @@ services:
     #command: -dbhost mongodb -logLevel DEBUG -forwarding -experimental
 
   draco:
+    profiles: [ "oip-core" ]
     image: draco
     build: ./build/draco
     hostname: draco
@@ -92,8 +96,10 @@ services:
       - ./conf/draco/templates:/opt/nifi/nifi-current/templates
 
   mongodb:
+    profiles: [ "oip-core" ]
     image: mongo:7.0.5
     hostname: mongodb
+    container_name: mongodb
     networks:
       - hostnet
     ports:
@@ -103,8 +109,10 @@ services:
       - mongodb_volume:/data
 
   postgres:
+    profiles: [ "oip-core" ]
     image: postgres:17.2
     hostname: postgres
+    container_name: postgres
     networks:
       - hostnet
     ports:
@@ -117,6 +125,9 @@ services:
       - postgres_volume:/var/lib/postgresql/data/
 
   minio:
+    container_name: minio
+    hostname: minio
+    profiles: [ "oip-core" ]
     image: minio/minio:RELEASE.2024-11-07T00-52-20Z
     restart: unless-stopped
     volumes:
@@ -130,6 +141,7 @@ services:
       - 9001:9001
 
   mosquitto:
+    profiles: [ "oip-core" ]
     image: eclipse-mosquitto:2.0
     hostname: mosquitto
     networks:
@@ -142,6 +154,7 @@ services:
       - ./conf/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
   
   keycloak:
+    profiles: [ "oip-sec" ]
     container_name: keycloak
     hostname: keycloak
     ports:
@@ -159,8 +172,10 @@ services:
       - ./conf/keycloak/theme:/opt/keycloak/themes/pioneer
   
   kc-postgres:
+    profiles: [ "oip-sec" ]
     image: postgres:17.2
     hostname: kc-postgres
+    container_name: kc-postgres
     networks:
       - hostnet
     expose:
@@ -173,11 +188,10 @@ services:
       - kc_volume:/var/lib/postgresql/data/
 
   iotagent-opcua:
+    profiles: [ "oip-connector-opcua" ]
     image: iotagent4fiware/iotagent-opcua:2.2.8
     hostname: iotagent-opcua
-    depends_on:
-      - mongodb
-      - orion
+    container_name: iotagent-opcua
     networks:
       - hostnet
     ports:
@@ -189,10 +203,10 @@ services:
       - ./conf/iotagent-opcua:/opt/iotagent-opcua/conf
 
   iotagent-json:
+    profiles: [ "oip-connector-json" ]
     image: quay.io/fiware/iotagent-json:3.6.0
     hostname: iotagent-json
-    depends_on:
-      - mongodb
+    container_name: iotagent-json
     networks:
       - hostnet
     ports:
@@ -202,8 +216,10 @@ services:
       - conf/iotagent-json/iotagent-json.env
 
   aas-proxy:
+    profiles: [ "oip-connector-aas-proxy" ]
     build: ./build/aas-proxy
     hostname: aas-proxy
+    container_name: aas-proxy
     networks:
       - hostnet
     ports:
@@ -212,12 +228,10 @@ services:
       - conf/aas-proxy/aas-proxy.env
 
   iotagent-aas:
+    profiles: [ "oip-connector-aas" ]
     image: iotagent4fiware/iotagent-aas:1.0.2
     hostname: iotagent-aas
-    depends_on:
-      - mongodb
-      - orion
-      - aas-proxy
+    container_name: iotagent-aas
     networks:
       - hostnet
     ports:
@@ -229,8 +243,10 @@ services:
       - ./conf/iotagent-aas:/opt/iotagent-aas/conf
 
   iotagent-ui-spa:
+    profiles: [ "oip-connector-opcua", "oip-connector-json", "oip-connector-aas" ]
     image: iotagent4fiware/iotagent-ui-spa:1.0.3
     hostname: iotagent-ui-spa
+    container_name: iotagent-ui-spa
     depends_on:
       - iotagent-ui-bff
     networks:
@@ -242,10 +258,10 @@ services:
       APP_BASE_HREF: '/'
 
   iotagent-ui-bff:
+    profiles: [ "oip-connector-opcua", "oip-connector-json", "oip-connector-aas" ]
     image: iotagent4fiware/iotagent-ui-bff:1.0.2
     hostname: iotagent-ui-bff
-    depends_on:
-      - mongodb
+    container_name: iotagent-ui-bff
     networks:
       - hostnet
     extra_hosts:
@@ -262,6 +278,7 @@ services:
       ADMIN_ACCOUNT: 'true'
 
   grafana:
+    profiles: [ "oip-visualization" ]
     image: grafana/grafana:10.2.3
     hostname: grafana
     container_name: grafana
@@ -274,23 +291,6 @@ services:
       - 3000:3000
     environment:
       - GF_SERVER_ROOT_URL=https://grafana.pioneer-project.eu
-
-  pgadmin:
-    image: dpage/pgadmin4:8.4
-    container_name: pgadmin4
-    hostname: pgadmin4
-    restart: always
-    networks:
-      - hostnet
-    depends_on:
-      - postgres
-    ports:
-      - "5050:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: "test@test.it"
-      PGADMIN_DEFAULT_PASSWORD: "password"
-    volumes:
-      - pgadminvolume:/var/lib/pgadmin
 
 ## By default, this config uses default local driver,
 ## For custom volumes replace with volume driver configuration.
