@@ -7,8 +7,8 @@ USER root
 RUN apt-get update && \
     apt-get install -y nano
 
-COPY /custom-init.sh /opt/nifi/scripts/custom-init.sh
-COPY /inject.sh /opt/nifi/scripts/inject.sh
+COPY ./custom-init.sh /opt/nifi/scripts/custom-init.sh
+COPY ./inject.sh /opt/nifi/scripts/inject.sh
 
 RUN chown nifi /opt/nifi/scripts/custom-init.sh  && \
     chgrp nifi /opt/nifi/scripts/custom-init.sh
