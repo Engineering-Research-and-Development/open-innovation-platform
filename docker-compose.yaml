@@ -229,7 +229,7 @@ services:
 
   iotagent-aas:
     profiles: [ "oip-connector-aas" ]
-    image: iotagent4fiware/iotagent-aas:1.0.2
+    image: iotagent4fiware/iotagent-aas:1.0.6
     hostname: iotagent-aas
     container_name: iotagent-aas
     networks:
